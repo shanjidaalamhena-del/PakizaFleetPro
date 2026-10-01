@@ -9,7 +9,7 @@ export default function InputField({
   onRightIconClick,
 }) {
   return (
-    <div className="mb-4">
+    <div className="mb-2">
       <label className="block text-[14px] font-medium text-[#1f2937] mb-2">
         {label} <span className="text-red-500">*</span>
       </label>
@@ -27,7 +27,7 @@ export default function InputField({
           placeholder={placeholder}
           value={value}
           onChange={onChange}
-          className="w-full h-[44px] rounded-lg border border-[#d2dff0] Sbg-[#E8F0FE] pl-10 pr-10 text-[14px] text-gray-800 placeholder-gray-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          className="w-full h-[40px] rounded-lg border border-[#d2dff0] Sbg-[#E8F0FE] pl-10 pr-10 text-[14px] text-gray-800 bg-blue-50 placeholder-gray-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
         />
 
         {RightIcon && (
