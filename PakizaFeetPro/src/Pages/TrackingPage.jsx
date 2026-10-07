@@ -11,8 +11,8 @@ const [activeTab, setActiveTab] = useState("live");
 const [speed, setSpeed] = useState("1x");
 const [backtrackData, setBacktrackData] = useState([]);
 const [playbackIndex, setPlaybackIndex] = useState(0);
- const host = import.meta.env.VITE_API_URL
 
+ const host = import.meta.env.VITE_API_URL
 
   useEffect(() => {
     const getVehicleLocations = async () => {
@@ -34,33 +34,64 @@ const [playbackIndex, setPlaybackIndex] = useState(0);
 
         console.log("Vehicle Location Response:", result);
 
-        if (response.ok) {
-          setVehicleLocations(result.data || []);
-        } else {
-          console.error(
-            result.message || "Failed to get vehicle locations"
-          );
-        }
+        // if (response.ok) {
+        //   setVehicleLocations(result.data || []);
+        // } else {
+        //   console.error(
+        //     result.message || "Failed to get vehicle locations"
+        //   );
+        // }
+  if (response.ok && Array.isArray(result.data)) {
+        setVehicleLocations(result.data);
 
+        // Selected vehicle-এর নতুন location update
+        setSelectedVehicle((currentSelected) => {
+          if (!currentSelected) return null;
+
+          const updatedVehicle = result.data.find(
+            (vehicle) =>
+              vehicle.vehicle_number ===
+              currentSelected.vehicle_number
+          );
+//           console.log(
+//   "SELECTED VEHICLE LOCATION:",
+//   updatedVehicle?.vehicle_number,
+//   updatedVehicle?.latitude,
+//   updatedVehicle?.longitude
+// );
+console.log(
+  "SELECTED VEHICLE:",
+  updatedVehicle?.vehicle_number,
+  "LAT:",
+  updatedVehicle?.latitude,
+  "LONG:",
+  updatedVehicle?.longitude,
+  "SPEED:",
+  updatedVehicle?.speed,
+  "TIMESTAMP:",
+  updatedVehicle?.timestamp
+);
+// console.log("FULL SELECTED VEHICLE:", updatedVehicle);
+          return updatedVehicle || currentSelected;
+        });
+      }
       } catch (error) {
         console.error("Vehicle location error:", error);
       }
     };
 
     getVehicleLocations();
-  }, []);
+const interval = setInterval(() => {
+    getVehicleLocations();
+  }, 3000);
+
+  return () => clearInterval(interval);
+}, [host]);
 
 
   return (
     <div>
-      {/* <TrackingHeader/>
-     <div className="mt-3 flex flex-row">
-      <VehiclePanel 
-      vehicleLocations={vehicleLocations}
-        onVehicleSelect={setSelectedVehicle}/>
-      <TrackingMap 
-      vehicleLocations={vehicleLocations}
-      selectedVehicle={selectedVehicle} /> */}
+
        <TrackingHeader activeTab={activeTab} onTabChange={setActiveTab} />
 
       <div className="mt-3 flex flex-row">
@@ -81,6 +112,7 @@ const [playbackIndex, setPlaybackIndex] = useState(0);
   setPlaybackIndex={setPlaybackIndex}
    speed={speed}
   setSpeed={setSpeed}
+  
 />
         )}
 
@@ -91,7 +123,7 @@ const [playbackIndex, setPlaybackIndex] = useState(0);
         backtrackData={backtrackData}
        playbackIndex={playbackIndex}
         speed={speed}
- 
+  
        />
       </div>
     </div>

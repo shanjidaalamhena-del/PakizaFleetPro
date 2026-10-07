@@ -24,10 +24,19 @@ export default function RouteHistoryPanel({
   speed,
   setSpeed,
 }) {
+  
   const [duration, setDuration] = useState("1d");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [playing, setPlaying] = useState(false);
+
+  const currentPoint = backtrackData?.[playbackIndex];
+
+  const totalStops = backtrackData?.filter(
+  (point) => point.is_stop === true
+).length || 0;
+
+const currentSpeed = Number(currentPoint?.speed || 0);
 
   const [vehicleSearch, setVehicleSearch] = useState("");
   const [showVehicles, setShowVehicles] = useState(false);
@@ -66,7 +75,7 @@ export default function RouteHistoryPanel({
       const response = await fetch(
         `${host}/master-data/vehicle/backtrack?vehicle_number=${encodeURIComponent(
           selectedVehicle.vehicle_number
-        )}&duration=${duration}`,
+        )}&duration=${duration}&from_date=${fromDate}&to_date=${toDate}`,
         {
           method: "GET",
           headers: {
@@ -115,7 +124,7 @@ export default function RouteHistoryPanel({
 
         return currentIndex + 1;
       });
-    }, 1000 / speedValue);
+    }, 500 / speedValue);
 
     return () => clearInterval(interval);
   }, [
@@ -422,7 +431,7 @@ export default function RouteHistoryPanel({
 
             <p className="mt-0.5 flex items-center gap-1 text-sm font-semibold text-gray-800">
               <Triangle className="h-3 w-3 fill-gray-900 text-gray-900" />
-              21 km/h
+             {Number(currentPoint?.speed || 0)} km/h
             </p>
           </div>
 
@@ -433,7 +442,7 @@ export default function RouteHistoryPanel({
 
             <p className="mt-0.5 flex items-center gap-1 text-sm font-semibold text-black-600">
               <AlertCircle className="h-4 w-4 fill-red-400 text-white" />
-              5 stops
+              {totalStops} stops
             </p>
           </div>
 
@@ -446,7 +455,9 @@ export default function RouteHistoryPanel({
           </p>
 
           <p className="mt-0.5 text-sm font-semibold text-gray-800">
-            9/27/2026, 7:40:43 AM
+           {currentPoint?.timestamp
+    ? new Date(currentPoint.timestamp).toLocaleString()
+    : "--"}
           </p>
         </div>
 
@@ -456,9 +467,15 @@ export default function RouteHistoryPanel({
             Status
           </p>
 
-          <p className="mt-0.5 text-sm font-semibold text-emerald-600">
-            Moving
-          </p>
+         <p
+  className={`mt-0.5 text-sm font-semibold ${
+    currentSpeed > 0
+      ? "text-emerald-600"
+      : "text-gray-500"
+  }`}
+>
+  {currentSpeed > 0 ? "Moving" : "Idle"}
+</p>
         </div>
 
       </div>

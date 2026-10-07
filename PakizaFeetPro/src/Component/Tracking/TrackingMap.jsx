@@ -99,20 +99,95 @@ function ZoomControl() {
 
 
 // Move map to selected vehicle
+// function SelectedVehicle({ selectedVehicle }) {
+//   const map = useMap();
+
+//   useEffect(() => {
+//     if (!selectedVehicle) return;
+
+//     map.setView(
+//   [
+//     Number(selectedVehicle.latitude),
+//     Number(selectedVehicle.longitude),
+//   ],
+//   16
+// );
+//   }, [selectedVehicle, map]);
+
+//   return null;
+// }
+// Make map follow moving vehicle
+function MapFollower({ vehiclePosition }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!vehiclePosition) return;
+
+    const [latitude, longitude] = vehiclePosition;
+
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      return;
+    }
+
+    map.panTo(
+      [latitude, longitude],
+      {
+        animate: true,
+        duration: 0.4,
+      }
+    );
+  }, [vehiclePosition, map]);
+
+  return null;
+}
+
+
+
+
+
 function SelectedVehicle({ selectedVehicle }) {
   const map = useMap();
 
   useEffect(() => {
     if (!selectedVehicle) return;
 
+    const latitude = Number(selectedVehicle.latitude);
+    const longitude = Number(selectedVehicle.longitude);
+
+  //    console.log("SELECTED VEHICLE:", selectedVehicle.vehicle_number);
+  // console.log("NEW LOCATION:", latitude, longitude);
+  // console.log("MAP CENTERING...");
+
+  console.log({
+ vehicle: selectedVehicle.vehicle_number,
+latitude: selectedVehicle.latitude,
+longitude: selectedVehicle.longitude,
+speed: selectedVehicle.speed,
+timestamp: selectedVehicle.timestamp,
+created_at: selectedVehicle.created_at,
+updated_at: selectedVehicle.updated_at,
+});
+
+    if (!latitude || !longitude) return;
+
     map.setView(
-      [selectedVehicle.latitude, selectedVehicle.longitude],
-      16
+      [latitude, longitude],
+       map.getZoom(),
+      //  16,
+      {
+        animate: true,
+        duration: 1,
+      }
     );
-  }, [selectedVehicle, map]);
+  }, [
+    selectedVehicle?.latitude,
+    selectedVehicle?.longitude,
+    map,
+  ]);
 
   return null;
 }
+ 
 
 
 // Smooth moving vehicle
@@ -121,6 +196,7 @@ function SmoothVehicleMarker({
   backtrackData,
   playbackIndex,
   speed,
+  onPositionChange,
 }) {
   const [position, setPosition] = useState(null);
 
@@ -139,8 +215,13 @@ function SmoothVehicleMarker({
         currentPoint.longitude,
       ]);
 
+      onPositionChange?.([
+  Number(currentPoint.latitude),
+  Number(currentPoint.longitude),
+]);
       return;
     }
+    
 
     let animationFrame;
 
@@ -149,7 +230,7 @@ function SmoothVehicleMarker({
     // Speed অনুযায়ী duration
     const speedValue = parseFloat(speed) || 1;
 
-    const duration = 1000 / speedValue;
+    const duration = 500 / speedValue;
 
     const animate = (currentTime) => {
       const elapsed = currentTime - startTime;
@@ -178,6 +259,11 @@ function SmoothVehicleMarker({
         latitude,
         longitude,
       ]);
+
+  onPositionChange?.([
+  latitude,
+  longitude,
+]);
 
       if (progress < 1) {
         animationFrame = requestAnimationFrame(animate);
@@ -223,6 +309,8 @@ export default function TrackingMap({
   playbackIndex,
   speed,
 }) {
+  
+    const [vehiclePosition, setVehiclePosition] = useState(null);
   return (
     <div className="flex-1 ml-3 min-w-0 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
 
@@ -236,6 +324,9 @@ export default function TrackingMap({
 
         <ZoomControl />
 
+<MapFollower
+  vehiclePosition={vehiclePosition}
+/>
         <SelectedVehicle
           selectedVehicle={selectedVehicle}
         />
@@ -250,8 +341,8 @@ export default function TrackingMap({
         {backtrackData?.length > 0 && (
           <Polyline
             positions={backtrackData.map((point) => [
-              point.latitude,
-              point.longitude,
+             Number(point.latitude),
+              Number(point.longitude),
             ])}
           />
         )}
@@ -264,12 +355,44 @@ export default function TrackingMap({
             backtrackData={backtrackData}
             playbackIndex={playbackIndex}
             speed={speed}
+            onPositionChange={setVehiclePosition}
           />
         )}
 
+{(selectedVehicle
+  ? [selectedVehicle]
+  : vehicleLocations
+).map((vehicle) => (
+  <Marker
+    key={vehicle.vehicle_number}
+    position={[
+      Number(vehicle.latitude),
+      Number(vehicle.longitude),
+    ]}
+    icon={vehicleIcon}
+  >
+    <Popup>
+      <div>
+        <p className="font-semibold">
+          Vehicle
+        </p>
 
+        <p className="text-sm">
+          {vehicle.vehicle_number}
+        </p>
+
+        <p className="text-xs text-gray-500">
+          Status:{" "}
+          {Number(vehicle.speed) > 0
+            ? "Moving"
+            : "Idle"}
+        </p>
+      </div>
+    </Popup>
+  </Marker>
+))}
         {/* Current Vehicle Markers */}
-        {vehicleLocations.map((vehicle) => (
+        {/* {vehicleLocations.map((vehicle) => (
           <Marker
             key={vehicle.id}
             position={[
@@ -303,7 +426,7 @@ export default function TrackingMap({
             </Popup>
 
           </Marker>
-        ))}
+        ))} */}
 
       </MapContainer>
 
